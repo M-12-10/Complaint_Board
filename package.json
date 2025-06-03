@@ -2,7 +2,7 @@
   "name": "complaint-board",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://M-12-10/Complaint_Board",
+  "homepage": "https://m-12-10.github.io/Complaint_Board/",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
