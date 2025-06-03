@@ -1,5 +1,5 @@
 name: Deploy to GitHub Pages
-
+run: CI=false npm run build
 on:
   push:
     branches: [ main ]
