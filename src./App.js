@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Plus, X, Check, Clock, AlertCircle, Smile } from 'lucide-react';
 
-const LoveyComplaintBoard = () => {
+const App = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -277,4 +277,4 @@ const LoveyComplaintBoard = () => {
   );
 };
 
-export default LoveyComplaintBoard;
+export default App;
