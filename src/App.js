@@ -14,6 +14,26 @@ const App = () => {
     submittedBy: 'Wife'
   });
 
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const response = await fetch('/Complaint_Board/complaints.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setComplaints(data.complaints || []);
+      } catch (e) {
+        setError('Failed to load complaints. Using fresh board.');
+        console.error("Fetch error:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaints();
+  }, []);
+
   const priorityColors = {
     low: 'bg-green-100 text-green-800 border-green-200',
     medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -26,6 +46,20 @@ const App = () => {
     high: <AlertCircle className="w-4 h-4" />
   };
 
+  const saveComplaints = (updatedComplaints) => {
+    const dataToSave = {
+      complaints: updatedComplaints,
+      lastUpdated: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'complaints.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSubmit = () => {
     if (!newComplaint.title.trim()) return;
 
@@ -36,22 +70,29 @@ const App = () => {
       dateSubmitted: new Date().toISOString().split('T')[0]
     };
 
-    setComplaints([complaint, ...complaints]);
+    const updatedComplaints = [complaint, ...complaints];
+    setComplaints(updatedComplaints);
+    saveComplaints(updatedComplaints);
     setNewComplaint({ title: '', description: '', priority: 'low', submittedBy: 'Wife' });
     setShowForm(false);
   };
 
   const toggleStatus = (id) => {
-    setComplaints(complaints.map(complaint => 
-      complaint.id === id 
+    const updatedComplaints = complaints.map(complaint =>
+      complaint.id === id
         ? { ...complaint, status: complaint.status === 'open' ? 'resolved' : 'open' }
         : complaint
-    ));
+    );
+    setComplaints(updatedComplaints);
+    saveComplaints(updatedComplaints);
   };
 
   const deleteComplaint = (id) => {
-    setComplaints(complaints.filter(complaint => complaint.id !== id));
+    const updatedComplaints = complaints.filter(complaint => complaint.id !== id);
+    setComplaints(updatedComplaints);
+    saveComplaints(updatedComplaints);
   };
+
 
   const openComplaints = complaints.filter(c => c.status === 'open');
   const resolvedComplaints = complaints.filter(c => c.status === 'resolved');
@@ -106,17 +147,17 @@ const App = () => {
                 <input
                   type="text"
                   value={newComplaint.title}
-                  onChange={(e) => setNewComplaint({...newComplaint, title: e.target.value})}
+                  onChange={(e) => setNewComplaint({ ...newComplaint, title: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   placeholder="e.g., Again ghalti se sogaya"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">To Do</label>
                 <textarea
                   value={newComplaint.description}
-                  onChange={(e) => setNewComplaint({...newComplaint, description: e.target.value})}
+                  onChange={(e) => setNewComplaint({ ...newComplaint, description: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent h-24"
                   placeholder="e.g., Nahi sona again aise beghair bataye bonge admi"
                 />
@@ -127,7 +168,7 @@ const App = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Priority Level</label>
                   <select
                     value={newComplaint.priority}
-                    onChange={(e) => setNewComplaint({...newComplaint, priority: e.target.value})}
+                    onChange={(e) => setNewComplaint({ ...newComplaint, priority: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   >
                     <option value="low">Low (Apne time pe theek karo)</option>
@@ -185,9 +226,9 @@ const App = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-600 mb-3">{complaint.description}</p>
-                  
+
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
                       <span className={`px-3 py-1 rounded-full border text-xs font-medium flex items-center gap-1 ${priorityColors[complaint.priority]}`}>
@@ -238,9 +279,9 @@ const App = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-600 mb-3">{complaint.description}</p>
-                  
+
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
                       <span className="px-3 py-1 rounded-full border text-xs font-medium bg-green-100 text-green-800 border-green-200">
