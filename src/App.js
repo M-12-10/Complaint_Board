@@ -309,9 +309,6 @@ const App = () => {
           <p className="text-gray-600">
             💕 Remember: This is all about love, communication, and a little bit of fun! 💕
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Note: When you add/edit complaints, a JSON file will download. Upload this file as 'complaints.json' to your GitHub repo to persist data.
-          </p>
         </div>
       </div>
     </div>
