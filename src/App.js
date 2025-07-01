@@ -14,15 +14,37 @@ const App = () => {
     submittedBy: 'Wife'
   });
 
+  const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN;
+  const GITHUB_USERNAME = process.env.REACT_APP_GITHUB_USERNAME;
+  const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO;
+  const GITHUB_BRANCH = process.env.REACT_APP_GITHUB_BRANCH;
+  const FILE_PATH = 'public/complaints.json';
+
+  const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const response = await fetch('/Complaint_Board/complaints.json');
+        const response = await fetch(GITHUB_API_URL, {
+          headers: {
+            Authorization: `token ${GITHUB_TOKEN}`,
+          },
+        });
+
+        if (response.status === 404) {
+          // File doesn't exist, create it with an empty array
+          await saveComplaints([]);
+          setComplaints([]);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
-        setComplaints(data.complaints || []);
+        const content = JSON.parse(atob(data.content));
+        setComplaints(content.complaints || []);
       } catch (e) {
         setError('Failed to load complaints. Using fresh board.');
         console.error("Fetch error:", e);
@@ -32,7 +54,7 @@ const App = () => {
     };
 
     fetchComplaints();
-  }, []);
+  }, [GITHUB_API_URL, GITHUB_TOKEN]);
 
   const priorityColors = {
     low: 'bg-green-100 text-green-800 border-green-200',
@@ -46,19 +68,51 @@ const App = () => {
     high: <AlertCircle className="w-4 h-4" />
   };
 
-  const saveComplaints = (updatedComplaints) => {
-    const dataToSave = {
-      complaints: updatedComplaints,
-      lastUpdated: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'complaints.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const saveComplaints = async (updatedComplaints) => {
+    try {
+      // First, get the current SHA of the file
+      const getResponse = await fetch(GITHUB_API_URL, {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+        },
+      });
+
+      let sha;
+      if (getResponse.ok) {
+        const data = await getResponse.json();
+        sha = data.sha;
+      }
+
+      const dataToSave = {
+        complaints: updatedComplaints,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      const content = btoa(JSON.stringify(dataToSave, null, 2));
+
+      const updateResponse = await fetch(GITHUB_API_URL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `token ${GITHUB_TOKEN}`,
+        },
+        body: JSON.stringify({
+          message: `Update complaints.json ${new Date().toISOString()}`,
+          content,
+          sha,
+          branch: GITHUB_BRANCH,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}`);
+      }
+    } catch (e) {
+      setError('Failed to save complaints.');
+      console.error("Save error:", e);
+    }
   };
+
 
   const handleSubmit = () => {
     if (!newComplaint.title.trim()) return;
