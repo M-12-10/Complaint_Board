@@ -70,7 +70,6 @@ const App = () => {
 
   const saveComplaints = async (updatedComplaints) => {
     try {
-      // First, get the current SHA of the file
       const getResponse = await fetch(GITHUB_API_URL, {
         headers: {
           Authorization: `token ${GITHUB_TOKEN}`,
